@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Bell, CheckCheck, LogOut, Settings, User } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -13,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useSession, signOut } from "@/lib/auth-client"
 
 const notifications = [
   {
@@ -47,7 +49,28 @@ const notifications = [
 
 const unreadCount = notifications.filter((n) => n.unread).length
 
+function getInitials(name?: string | null): string {
+  if (!name) return "??"
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
 export function DashboardHeader() {
+  const router = useRouter()
+  const { data: session } = useSession()
+
+  const user = session?.user
+  const displayName = user?.name ?? user?.email ?? "Unknown"
+  const initials = getInitials(user?.name)
+
+  async function handleSignOut() {
+    await signOut()
+    router.push("/sign-in")
+  }
+
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border/50 bg-background/80 backdrop-blur-md px-6">
       <SidebarTrigger className="-ml-1" />
@@ -140,18 +163,18 @@ export function DashboardHeader() {
               aria-label="Open profile menu"
             >
               <Avatar className="size-8 rounded-sm">
-                <AvatarImage src="" alt="Realfar" />
+                <AvatarImage src={user?.image ?? ""} alt={displayName} />
                 <AvatarFallback className="rounded-sm bg-primary/15 text-primary text-xs font-bold">
-                  RF
+                  {initials}
                 </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold">Realfar</span>
+              <span className="text-sm font-semibold">{displayName}</span>
               <span className="text-xs font-normal text-muted-foreground">
-                admin@nexus.dev
+                {user?.email}
               </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -164,7 +187,10 @@ export function DashboardHeader() {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive cursor-pointer"
+              onClick={handleSignOut}
+            >
               <LogOut />
               <span>Log out</span>
             </DropdownMenuItem>
