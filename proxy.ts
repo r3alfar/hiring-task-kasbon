@@ -1,33 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSessionCookie } from "better-auth/cookies";
+import { NextResponse, type NextRequest } from 'next/server'
+import { updateAuth } from '@/lib/supabase/middleware'
 
-const AUTH_ROUTES = ["/sign-in", "/sign-up"];
-const PROTECTED_ROUTES = ["/dashboard"];
+export async function proxy(request: NextRequest) {
+  // Refresh Supabase session & get user
+  const { response, user } = await updateAuth(request)
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const sessionCookie = getSessionCookie(request);
-  const isAuthed = Boolean(sessionCookie);
+  const isAuthPage =
+    request.nextUrl.pathname.startsWith('/sign-in') ||
+    request.nextUrl.pathname.startsWith('/sign-up')
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthed && AUTH_ROUTES.some((r) => pathname.startsWith(r))) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Logged-in user trying to access auth pages → redirect to dashboard
+  if (user && isAuthPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
   }
 
-  // Redirect unauthenticated users away from protected pages
-  if (!isAuthed && PROTECTED_ROUTES.some((r) => pathname.startsWith(r))) {
-    const url = new URL("/sign-in", request.url);
-    url.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(url);
+  // Not logged in trying to access protected pages → redirect to sign-in
+  if (!user && !isAuthPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/sign-in'
+    return NextResponse.redirect(url)
   }
 
-  return NextResponse.next();
+  return response
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/sign-in",
-    "/sign-up",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public assets (svg, png, jpg, etc.)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}
