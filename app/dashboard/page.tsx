@@ -1,32 +1,82 @@
-import { StatCards } from "@/components/dashboard/stat-cards"
-import { RevenueChart } from "@/components/dashboard/revenue-chart"
-import { ActivityTable } from "@/components/dashboard/activity-table"
-import { TopChannels } from "@/components/dashboard/top-channels"
-import { DashboardHeader } from "@/components/dashboard/header"
+"use client";
+
+import { Suspense, useState } from "react";
+import { useQueryStates } from "nuqs";
+import { SummaryCards } from "@/components/dashboard/summary-cards";
+import { DebtFilters } from "@/components/dashboard/debt-filters";
+import { DebtList } from "@/components/dashboard/debt-list";
+import { DebtChart } from "@/components/dashboard/debt-chart";
+import { type Debt } from "@/hooks/use-debts";
+import { DebtFormModal } from "@/components/dashboard/debt-form-modal";
+import { DashboardFallbackSkeleton } from "@/components/dashboard/states";
+import { dashboardParsers } from "@/lib/search-params";
+
+function DashboardContent() {
+  const [filters] = useQueryStates(dashboardParsers);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+
+  const { status: statusFilter, type: typeFilter, q: searchQuery, sort } = filters;
+
+  const handleToggleSettle = async (id: string, currentSettled: boolean) => {
+    await fetch(`/api/debts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        settled_at: currentSettled ? null : new Date().toISOString(),
+      }),
+    });
+  };
+
+  const handleEdit = (debt: Debt) => {
+    setEditingDebt(debt);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingDebt(null);
+  };
+
+  return (
+    <>
+      <div className="space-y-6 p-4 md:p-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Track dan kelola utang piutangmu</p>
+        </div>
+
+        <SummaryCards />
+        <DebtChart />
+
+        <DebtFilters onNew={() => setIsModalOpen(true)} />
+
+        <div className="mt-6">
+          <h2 className="mb-4 text-lg font-semibold">Daftar Catatan</h2>
+          <DebtList
+            statusFilter={statusFilter}
+            typeFilter={typeFilter}
+            searchQuery={searchQuery}
+            sort={sort}
+            onEdit={handleEdit}
+            onToggleSettle={handleToggleSettle}
+          />
+        </div>
+      </div>
+
+      <DebtFormModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        editDebt={editingDebt}
+      />
+    </>
+  );
+}
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-0 min-h-svh">
-      <DashboardHeader />
-
-      {/* Dashboard Content */}
-      <div className="flex-1 p-6 flex flex-col gap-6">
-        {/* Stat Cards */}
-        <StatCards />
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <RevenueChart />
-          </div>
-          <div className="xl:col-span-1">
-            <TopChannels />
-          </div>
-        </div>
-
-        {/* Activity Table */}
-        <ActivityTable />
-      </div>
-    </div>
-  )
+    <Suspense fallback={<DashboardFallbackSkeleton />}>
+      <DashboardContent />
+    </Suspense>
+  );
 }

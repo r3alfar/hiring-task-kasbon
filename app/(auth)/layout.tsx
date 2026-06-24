@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s — Nexus",
-    default: "Auth — Nexus",
+    template: "%s — Kasbon",
+    default: "Kasbon - Track Utang Piutang",
   },
-  description: "Nexus platform authentication",
+  description: "Aplikasi sederhana track utang piutang pribadi",
 };
 
 export default function AuthLayout({
@@ -15,7 +16,6 @@ export default function AuthLayout({
 }) {
   return (
     <div className="relative min-h-svh w-full overflow-hidden bg-background">
-      {/* Subtle radial gradient background */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         aria-hidden="true"
@@ -24,7 +24,6 @@ export default function AuthLayout({
         <div className="absolute right-1/4 bottom-1/4 size-[400px] rounded-full bg-primary/3 blur-3xl" />
       </div>
 
-      {/* Grid noise texture overlay */}
       <div
         className="pointer-events-none absolute inset-0 -z-10 opacity-[0.02]"
         style={{
@@ -34,16 +33,15 @@ export default function AuthLayout({
       />
 
       <div className="flex min-h-svh flex-col items-center justify-center px-4 py-12">
-        {/* Wordmark */}
-        <a
+        <Link
           href="/"
           className="mb-10 flex items-center gap-2 text-lg font-bold tracking-tight transition-opacity hover:opacity-70"
         >
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-[11px] font-black text-primary-foreground">
-            N
+            K
           </span>
-          <span>Nexus</span>
-        </a>
+          <span>Kasbon</span>
+        </Link>
 
         {children}
       </div>
