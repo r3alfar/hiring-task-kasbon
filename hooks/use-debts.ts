@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { CreateDebtInput as CreateDebtInputOrig, UpdateDebtInput as UpdateDebtInputOrig } from "@/lib/validators";
 import type { SortOption } from "@/lib/search-params";
+import { subscribeToDebtChanges } from "@/lib/debt-cache";
 
 export type { SortOption };
 
@@ -85,6 +86,16 @@ export function useDebts(options?: UseDebtsOptions) {
     // effect (see https://react.dev/learn/you-might-not-need-an-effect#fetching-data).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchDebts();
+  }, [fetchDebts]);
+
+  // Re-fetch ketika ada perubahan data (create/update/delete) dari komponen
+  // lain di dashboard. Karena SummaryCards, DebtChart, dan DebtList masing-
+  // masing punya instance useDebts sendiri, kita pakai event-based cache
+  // invalidation supaya semua instance ikut refresh tanpa reload halaman.
+  useEffect(() => {
+    return subscribeToDebtChanges(() => {
+      void fetchDebts();
+    });
   }, [fetchDebts]);
 
   const addDebt = useCallback((newDebt: Debt) => {

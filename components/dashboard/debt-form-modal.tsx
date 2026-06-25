@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { type Debt, type CreateDebtInput } from "@/hooks/use-debts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
 import { formatRupiahNoSymbol } from "@/lib/format";
+import { notifyDebtChanged } from "@/lib/debt-cache";
 
 interface DebtFormModalProps {
   isOpen: boolean;
@@ -17,7 +17,6 @@ interface DebtFormModalProps {
 }
 
 export function DebtFormModal({ isOpen, onClose, editDebt }: DebtFormModalProps) {
-  const router = useRouter();
   const [type, setType] = useState<"owed_to_me" | "i_owe">("owed_to_me");
   const [counterpart_name, setCounterpart_name] = useState("");
   const [amount, setAmount] = useState("");
@@ -85,7 +84,9 @@ export function DebtFormModal({ isOpen, onClose, editDebt }: DebtFormModalProps)
 
       resetForm();
       onClose();
-      router.refresh();
+      // Beri tahu semua instance useDebts (SummaryCards, DebtChart, DebtList)
+      // agar re-fetch data terbaru tanpa perlu refresh halaman.
+      notifyDebtChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {

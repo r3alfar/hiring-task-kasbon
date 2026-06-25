@@ -10,6 +10,7 @@ import { type Debt } from "@/hooks/use-debts";
 import { DebtFormModal } from "@/components/dashboard/debt-form-modal";
 import { DashboardFallbackSkeleton } from "@/components/dashboard/states";
 import { dashboardParsers } from "@/lib/search-params";
+import { notifyDebtChanged } from "@/lib/debt-cache";
 
 function DashboardContent() {
   const [filters] = useQueryStates(dashboardParsers);
@@ -26,6 +27,9 @@ function DashboardContent() {
         settled_at: currentSettled ? null : new Date().toISOString(),
       }),
     });
+    // Beri tahu semua instance useDebts (list, summary, chart) untuk
+    // mengambil ulang data agar UI update tanpa refresh halaman.
+    notifyDebtChanged();
   };
 
   const handleEdit = (debt: Debt) => {

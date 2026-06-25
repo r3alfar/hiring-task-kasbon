@@ -7,6 +7,7 @@ import { formatRupiah, formatRelativeDate } from "@/lib/format";
 import { getTypeLabel, isSettled } from "@/hooks/use-debts";
 import { Pencil, Trash2, CheckCircle2, XCircle } from "lucide-react";
 import { DebtListSkeleton, EmptyState, ErrorState } from "@/components/dashboard/states";
+import { notifyDebtChanged } from "@/lib/debt-cache";
 
 interface DebtListProps {
   statusFilter?: "all" | "settled" | "unsettled";
@@ -96,7 +97,8 @@ export function DebtList({
                   <div>
                     <p className="font-medium">{debt.counterpart_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {getTypeLabel(debt.type)} • {formatRelativeDate(debt.created_at)}
+                      {getTypeLabel(debt.type)} •{" "}
+                      {formatRelativeDate(debt.due_date ?? debt.created_at)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -120,6 +122,11 @@ export function DebtList({
                         </>
                       )}
                     </span>
+                    {debt.settled_at && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Dilunasi {formatRelativeDate(debt.settled_at)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -155,7 +162,9 @@ export function DebtList({
                   onClick={async () => {
                     if (confirm("Hapus catatan ini?")) {
                       await fetch(`/api/debts/${debt.id}`, { method: "DELETE" });
-                      refetch();
+                      // Beri tahu semua instance useDebts (list, summary, chart)
+                      // untuk re-fetch supaya seluruh dashboard ikut update.
+                      notifyDebtChanged();
                     }
                   }}
                   title="Hapus"
