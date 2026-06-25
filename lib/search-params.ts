@@ -1,4 +1,4 @@
-import { parseAsString, parseAsStringLiteral, debounce } from "nuqs";
+import { parseAsString, parseAsStringLiteral, parseAsBoolean, debounce } from "nuqs";
 
 /**
  * Parsers untuk query params dashboard. Dipakai bersama oleh
@@ -41,6 +41,7 @@ export const dashboardParsers = {
   type: parseAsStringLiteral<TypeFilter>(TYPE_OPTIONS).withDefault("all"),
   q: parseAsString.withDefault(""),
   sort: parseAsStringLiteral<SortOption>(SORT_OPTIONS).withDefault("date-desc"),
+  group: parseAsBoolean.withDefault(false),
 };
 
 /**

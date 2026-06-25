@@ -17,7 +17,7 @@ function DashboardContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
 
-  const { status: statusFilter, type: typeFilter, q: searchQuery, sort } = filters;
+  const { status: statusFilter, type: typeFilter, q: searchQuery, sort, group } = filters;
 
   const handleToggleSettle = async (id: string, currentSettled: boolean) => {
     await fetch(`/api/debts/${id}`, {
@@ -62,6 +62,7 @@ function DashboardContent() {
             typeFilter={typeFilter}
             searchQuery={searchQuery}
             sort={sort}
+            group={group}
             onEdit={handleEdit}
             onToggleSettle={handleToggleSettle}
           />

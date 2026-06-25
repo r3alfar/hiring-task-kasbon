@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, X } from "lucide-react";
+import { Search, X, Users } from "lucide-react";
 import {
   dashboardParsers,
   SEARCH_UPDATE_OPTIONS,
@@ -21,13 +21,17 @@ import {
 
 export function DebtFilters({ onNew }: { onNew: () => void }) {
   const [filters, setFilters] = useQueryStates(dashboardParsers);
-  const { status, type, q, sort } = filters;
+  const { status, type, q, sort, group } = filters;
 
   // Search: tulis langsung ke URL state. nuqs men-debounce update URL-nya
   // (lihat SEARCH_UPDATE_OPTIONS), jadi gak ada fetch di setiap ketikan.
   // `history: replace` supaya gak numpuk entry di back button.
   const handleSearchChange = (value: string) => {
     setFilters({ q: value }, SEARCH_UPDATE_OPTIONS);
+  };
+
+  const handleGroupToggle = () => {
+    setFilters({ group: !group }, FILTER_UPDATE_OPTIONS);
   };
 
   // Filter & sort: push history supaya bisa di-back. clearOnDefault (bawaan
@@ -106,7 +110,19 @@ export function DebtFilters({ onNew }: { onNew: () => void }) {
         </Select>
       </div>
 
-      <Button onClick={onNew}>+ Catat baru</Button>
+      <div className="flex items-center gap-2">
+        <Button
+          variant={group ? "default" : "outline"}
+          size="sm"
+          onClick={handleGroupToggle}
+          title={group ? "Tampilkan flat list" : "Kelompokkan per orang"}
+          aria-pressed={group}
+        >
+          <Users className="mr-1.5 size-4" />
+          Kelompokkan
+        </Button>
+        <Button onClick={onNew}>+ Catat baru</Button>
+      </div>
     </div>
   );
 }

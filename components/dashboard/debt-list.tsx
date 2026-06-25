@@ -1,19 +1,17 @@
 "use client";
 
 import { useDebts, type Debt, type SortOption } from "@/hooks/use-debts";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { formatRupiah, formatRelativeDate } from "@/lib/format";
-import { getTypeLabel, isSettled } from "@/hooks/use-debts";
-import { Pencil, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { DebtItem } from "@/components/dashboard/debt-item";
+import { DebtGroup } from "@/components/dashboard/debt-group";
+import { groupDebtsByPerson } from "@/lib/group-debts";
 import { DebtListSkeleton, EmptyState, ErrorState } from "@/components/dashboard/states";
-import { notifyDebtChanged } from "@/lib/debt-cache";
 
 interface DebtListProps {
   statusFilter?: "all" | "settled" | "unsettled";
   typeFilter?: "all" | "owed_to_me" | "i_owe";
   searchQuery?: string;
   sort?: SortOption;
+  group?: boolean;
   onEdit: (debt: Debt) => void;
   onToggleSettle: (id: string, currentSettled: boolean) => Promise<void>;
 }
@@ -37,6 +35,7 @@ export function DebtList({
   typeFilter,
   searchQuery,
   sort,
+  group,
   onEdit,
   onToggleSettle,
 }: DebtListProps) {
@@ -80,101 +79,35 @@ export function DebtList({
     );
   }
 
+  // Mode grouped: kelompokkan by counterpart_name (case-insensitive), lalu
+  // render satu DebtGroup per orang. Sorting group by totalAmount descending
+  // sudah dihandle oleh groupDebtsByPerson.
+  if (group) {
+    const groups = groupDebtsByPerson(debts);
+    return (
+      <div className="space-y-3">
+        {groups.map((g) => (
+          <DebtGroup
+            key={g.key}
+            group={g}
+            onEdit={onEdit}
+            onToggleSettle={onToggleSettle}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Mode flat (default): satu DebtItem per entry, urutan dari useDebts.
   return (
     <div className="space-y-3">
       {debts.map((debt) => (
-        <Card key={debt.id} className={`transition-all ${isSettled(debt.settled_at) ? "opacity-60" : ""}`}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              {/* Avatar */}
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                {debt.counterpart_name.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{debt.counterpart_name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {getTypeLabel(debt.type)} •{" "}
-                      {formatRelativeDate(debt.due_date ?? debt.created_at)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">{formatRupiah(debt.amount)}</p>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        debt.settled_at
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
-                          : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                      }`}
-                    >
-                      {debt.settled_at ? (
-                        <>
-                          <CheckCircle2 className="mr-1 size-3" />
-                          Lunas
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="mr-1 size-3" />
-                          Belum lunas
-                        </>
-                      )}
-                    </span>
-                    {debt.settled_at && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Dilunasi {formatRelativeDate(debt.settled_at)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Note */}
-                {debt.note && (
-                  <p className="text-xs text-muted-foreground line-clamp-1">{debt.note}</p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1">
-                {!debt.settled_at && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onToggleSettle(debt.id, false)}
-                    title="Tandai lunas"
-                  >
-                    <CheckCircle2 className="size-4" />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEdit(debt)}
-                  title="Edit"
-                >
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={async () => {
-                    if (confirm("Hapus catatan ini?")) {
-                      await fetch(`/api/debts/${debt.id}`, { method: "DELETE" });
-                      // Beri tahu semua instance useDebts (list, summary, chart)
-                      // untuk re-fetch supaya seluruh dashboard ikut update.
-                      notifyDebtChanged();
-                    }
-                  }}
-                  title="Hapus"
-                >
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <DebtItem
+          key={debt.id}
+          debt={debt}
+          onEdit={onEdit}
+          onToggleSettle={onToggleSettle}
+        />
       ))}
     </div>
   );
