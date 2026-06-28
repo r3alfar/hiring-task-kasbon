@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
-import { formatRupiahNoSymbol } from "@/lib/format";
 import { notifyDebtChanged } from "@/lib/debt-cache";
 
 interface DebtFormModalProps {
@@ -35,7 +34,7 @@ export function DebtFormModal({ isOpen, onClose, editDebt }: DebtFormModalProps)
     if (editDebt && isOpen) {
       setType(editDebt.type);
       setCounterpart_name(editDebt.counterpart_name);
-      setAmount(formatRupiahNoSymbol(editDebt.amount));
+      setAmount(String(editDebt.amount));
       setDue_date(editDebt.due_date ? new Date(editDebt.due_date).toISOString().split("T")[0] : "");
       setNote(editDebt.note || "");
     } else if (isOpen) {
@@ -71,15 +70,22 @@ export function DebtFormModal({ isOpen, onClose, editDebt }: DebtFormModalProps)
         note: note || null,
       };
 
-      const res = await fetch("/api/debts", {
+      const url = editDebt ? `/api/debts/${editDebt.id}` : "/api/debts";
+      const res = await fetch(url, {
         method: editDebt ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Gagal menyimpan data");
+        let message = "Gagal menyimpan data";
+        try {
+          const errorData = await res.json();
+          message = errorData.error || message;
+        } catch {
+          // Response bukan JSON (misal 405 Method Not Allowed)
+        }
+        throw new Error(message);
       }
 
       resetForm();

@@ -377,9 +377,11 @@ Kalau ada 1 hari lagi, yang saya polish:
 
 2. **Optimistic updates** — Saat ini setiap mutasi trigger full refetch. Dengan optimistic UI, user langsung lihat perubahan tanpa nunggu round-trip ke server. Bisa pakai `useSWR` atau `TanStack Query` dengan `mutate()`.
 
-3. **Mobile polish** — Layout sudah responsive, tapi bisa lebih polished: bottom sheet buat form di mobile (bukan modal), swipe gestures buat "tandai lunas", dan touch target yang lebih besar.
+3. **Browser back/forward (nuqs)** — Filter state tersimpan di URL via nuqs, tapi browser back belum sinkron dengan UI. URL berubah saat back, tapi komponen belum react ke perubahan. Perlu perbaikan konfigurasi history mode dan pastikan `popstate` event ter-handle konsisten.
 
-4. **E2E test** — Playwright test buat critical path: signup → create debt → tandai lunas → refresh → masih lunas. Saat ini ada unit test buat `groupDebtsByPerson()`, tapi belum cover flow end-to-end.
+4. **Mobile polish** — Layout sudah responsive, tapi bisa lebih polished: bottom sheet buat form di mobile (bukan modal), swipe gestures buat "tandai lunas", dan touch target yang lebih besar.
+
+5. **E2E test** — Playwright test buat critical path: signup → create debt → tandai lunas → refresh → masih lunas. Saat ini ada unit test buat `groupDebtsByPerson()`, tapi belum cover flow end-to-end.
 
 ---
 
